@@ -13,7 +13,7 @@ contract ERC20Token is ERC20, Ownable {
 
     function mint(uint256 _amount, address _to) public onlyOwner {
         require(totalSupply() + _amount <= MAX_SUPPLY, "ERC20Token: Amount exceeding max supply.");
-        _mint(_to, _amount);
+        _mint(_to, _amount * 10 ** decimals());
     }
 
     function maxSupply() public view returns(uint256) {
