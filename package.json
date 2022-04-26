@@ -1,0 +1,25 @@
+{
+  "name": "erc20-crowdsale",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle-config.js",
+  "scripts": {
+    "test": "truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kchn9/erc20-crowdsale.git"
+  },
+  "author": "kchn9",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kchn9/erc20-crowdsale/issues"
+  },
+  "homepage": "https://github.com/kchn9/erc20-crowdsale#readme",
+  "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.15"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.5.0"
+  }
+}
