@@ -1,14 +1,9 @@
-const { chai, BN, testHelpers } = require("./setup.js"); 
+const { chai, BN, tokenMigrationVars, testHelpers } = require("./setup.js");
+const { tokenName, tokenSymbol, tokenTotalSupply, tokenDecimals } = tokenMigrationVars;
 const { expectRevert } = testHelpers;
 const { expect } = chai;
 
 const ERC20Token = artifacts.require("./ERC20Token.sol");
-
-/* VARIABLES SHARED WITH DEPLOYER USING .ENV */
-const tokenName = process.env.NAME;
-const tokenSymbol = process.env.SYMBOL;
-const tokenTotalSupply = new BN(process.env.TOTAL_SUPPLY);
-const tokenDecimals = new BN(process.env.DECIMALS);
 
 contract("ERC20Token", async function(accounts) {
 
