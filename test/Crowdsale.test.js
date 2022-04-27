@@ -1,5 +1,6 @@
-const { chai, BN, testHelpers, tokenMigrationVars } = require("./setup.js");
-const { crowdsaleAllowance } = tokenMigrationVars;
+const { chai, BN, testHelpers, crowdsaleMigrationVars, tokenMigrationVars } = require("./setup.js");
+const { tokenDecimals } = tokenMigrationVars;
+const { crowdsaleAllowance, crowdsaleDefaultRate } = crowdsaleMigrationVars;
 const { expectRevert } = testHelpers;
 const { expect } = chai;
 
@@ -13,7 +14,7 @@ contract("Crowdsale", async function(accounts) {
     let crowdsaleInstance;
 
     async function getFreshInstance() {
-        return Crowdsale.new(tokenInstance.address, tokenDeployer, { from: tokenDeployer });
+        return Crowdsale.new(tokenInstance.address, tokenDeployer, crowdsaleDefaultRate, { from: tokenDeployer });
     }
 
     before("prepare pre-deployed instance", async function() {
@@ -29,10 +30,12 @@ contract("Crowdsale", async function(accounts) {
     })
 
     it("should sell tokens to address", async function() {
-        const expectedBalance = new BN(1_000_000);
-        await crowdsaleInstance.buyTokens(expectedBalance, { from: recepient }); // buy tokens
-        
-        const actualBalance = await tokenInstance.balanceOf(recepient);
+        const msgValue = web3.utils.toWei(new BN(1));
+        const expectedBalance = msgValue.mul(crowdsaleDefaultRate).div(new BN(10).pow(new BN(tokenDecimals)))
+
+        await crowdsaleInstance.buyTokens({ from: rest[0], value: msgValue }); // buy tokens for 1Eth
+
+        const actualBalance = await tokenInstance.balanceOf(rest[0]);
         return expect(actualBalance).to.be.a.bignumber.that.equal(expectedBalance);
     })
 
@@ -40,16 +43,14 @@ contract("Crowdsale", async function(accounts) {
         const instance = await getFreshInstance();
 
         await expectRevert(
-            instance.buyTokens(1, { from: recepient }),
-            "Crowdsale: Contract has no rights to sell tokens on owners behalf"
+            instance.buyTokens({ from: rest[0], value: 100 }),
+            "Crowdsale: Amount exceeds left allowance."
         )
     })
 
     it("should reject to sell tokens if amount exceeds allowance", async function() {
-        const exceedsAllowance =  crowdsaleAllowance.add( new BN(1) );
-
         await expectRevert(
-            crowdsaleInstance.buyTokens(exceedsAllowance, { from: recepient }),
+            crowdsaleInstance.buyTokens({ from: rest[0], value: crowdsaleAllowance.add(new BN(1)) }),
             "Crowdsale: Amount exceeds left allowance."
         )
     })

@@ -10,19 +10,23 @@ contract Crowdsale is Ownable {
 
     ERC20 immutable internal _ERC20token;
     address payable immutable public recipient;
+    uint public immutable rate; // tokens for 1 eth
 
-    constructor(ERC20 _token, address payable _recipient) {
+    constructor(ERC20 _token, address payable _recipient, uint _rate) {
         require(_token.balanceOf(owner()) > 0, "Crowdsale: Deployer has no tokens to sell.");
         require(_recipient != address(0), "Crowdsale: Receipient cannot be address 0.");
         _ERC20token = _token;
         recipient = _recipient;
+        rate = _rate;
     }
 
-    function buyTokens(uint _amount) external {
-        require(_ERC20token.allowance(owner(), address(this)) > 0, "Crowdsale: Contract has no rights to sell tokens on owners behalf");
-        require(getLeftAllowance() >= _amount, "Crowdsale: Amount exceeds left allowance.");
-        _ERC20token.transferFrom(owner(), msg.sender, _amount);
-        emit TokensPurchased(msg.sender, _amount);
+    function buyTokens() public payable {
+        uint tokenAmount = (msg.value * rate) / 10 ** _ERC20token.decimals();
+        require(getLeftAllowance() >= tokenAmount, "Crowdsale: Amount exceeds left allowance.");
+        (bool success, /* data */) = recipient.call{ value: msg.value }("");
+        require(success, "Crowdsale: ETH transfer failed.");
+        _ERC20token.transferFrom(owner(), msg.sender, tokenAmount);
+        emit TokensPurchased(msg.sender, tokenAmount);
     }
 
     function getLeftAllowance() public view returns(uint) {
