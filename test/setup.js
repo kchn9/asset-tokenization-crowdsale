@@ -13,8 +13,8 @@ const tokenMigrationVars = {
     tokenName: process.env.NAME,
     tokenSymbol: process.env.SYMBOL,
     tokenTotalSupply: new BN(process.env.TOTAL_SUPPLY),
-    tokenAllowance: new BN(process.env.APPROVED_TO_SELL), 
-    tokenDecimals: new BN(process.env.DECIMALS)
+    tokenDecimals: new BN(process.env.DECIMALS),
+    crowdsaleAllowance: new BN(process.env.APPROVED_TO_SELL)
 }
 
 module.exports = {
