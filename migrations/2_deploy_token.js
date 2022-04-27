@@ -1,5 +1,3 @@
-require("dotenv").config({ path: "../.env" });
-
 const ERC20Token = artifacts.require("./ERC20Token.sol");
 
 module.exports = function(deployer, _, accounts) {
