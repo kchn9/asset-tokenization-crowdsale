@@ -6,7 +6,7 @@ module.exports = async function(deployer, _, accounts) {
     deployer.then(async function() {
         try {
           const ERC20TokenInstance = await ERC20Token.deployed();
-          await deployer.deploy(Crowdsale, ERC20TokenInstance.address, tokenDeployer, { from: tokenDeployer });
+          await deployer.deploy(Crowdsale, ERC20TokenInstance.address, recepient, process.env.DEFAULT_RATE, { from: tokenDeployer });
           const crowdsaleInstance = await Crowdsale.deployed();
           await ERC20TokenInstance.approve(crowdsaleInstance.address, process.env.APPROVED_TO_SELL, { from: tokenDeployer });
         } catch (error) {
