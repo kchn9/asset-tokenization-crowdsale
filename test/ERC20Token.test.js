@@ -7,7 +7,8 @@ const ERC20Token = artifacts.require("./ERC20Token.sol");
 /* VARIABLES SHARED WITH DEPLOYER USING .ENV */
 const tokenName = process.env.NAME;
 const tokenSymbol = process.env.SYMBOL;
-const tokenTotalSupply = process.env.TOTAL_SUPPLY;
+const tokenTotalSupply = new BN(process.env.TOTAL_SUPPLY);
+const tokenDecimals = new BN(process.env.DECIMALS);
 
 contract("ERC20Token", async function(accounts) {
 
@@ -24,17 +25,18 @@ contract("ERC20Token", async function(accounts) {
 
     it("should set max supply of token correctly", async function() {        
         const actualMaxSupply = await preDeployedInstance.maxSupply();
+        const expectedResult = tokenTotalSupply.mul(new BN(10).pow(tokenDecimals))
 
-        return expect(actualMaxSupply).to.be.a.bignumber.that.equal(new BN(tokenTotalSupply));
+        return expect(actualMaxSupply).to.be.a.bignumber.that.equal(new BN(expectedResult));
     });
 
     it("should allow tokenDeployer to mint tokens", async function() {
-        const expectedAmount = 1_000_000;
+        const expectedResult = tokenTotalSupply.mul(new BN(10).pow(tokenDecimals));
  
-        await preDeployedInstance.mint(expectedAmount, recepient, { from: tokenDeployer });
+        await preDeployedInstance.mint(tokenTotalSupply, recepient, { from: tokenDeployer });
         const actualAmount = await preDeployedInstance.balanceOf(recepient);
 
-        return expect(actualAmount).to.be.a.bignumber.that.equal(new BN(1_000_000));
+        return expect(actualAmount).to.be.a.bignumber.that.equal(expectedResult);
     });
 
     it("should reject mint() if supply would exceed max supply", async function() {
