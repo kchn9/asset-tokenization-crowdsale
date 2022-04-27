@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Crowdsale is Ownable {
 
+    event TokensPurchased(address who, uint amount);
+
     ERC20 immutable internal _ERC20token;
     address payable immutable public recipient;
 
@@ -20,6 +22,7 @@ contract Crowdsale is Ownable {
         require(_ERC20token.allowance(owner(), address(this)) > 0, "Crowdsale: Contract has no rights to sell tokens on owners behalf");
         require(getLeftAllowance() >= _amount, "Crowdsale: Amount exceeds left allowance.");
         _ERC20token.transferFrom(owner(), msg.sender, _amount);
+        emit TokensPurchased(msg.sender, _amount);
     }
 
     function getLeftAllowance() public view returns(uint) {
