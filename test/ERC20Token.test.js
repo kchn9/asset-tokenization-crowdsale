@@ -1,5 +1,5 @@
 const { chai, BN, tokenMigrationVars, testHelpers } = require("./setup.js");
-const { tokenName, tokenSymbol, tokenTotalSupply, tokenDecimals } = tokenMigrationVars;
+const { tokenName, tokenSymbol, tokenTotalSupply } = tokenMigrationVars;
 const { expectRevert } = testHelpers;
 const { expect } = chai;
 
@@ -19,16 +19,16 @@ contract("ERC20Token", async function(accounts) {
     })
 
     it("should set max supply of token correctly", async function() {        
+        const expectedResult = tokenTotalSupply;
         const actualMaxSupply = await preDeployedInstance.maxSupply();
-        const expectedResult = tokenTotalSupply.mul(new BN(10).pow(tokenDecimals))
 
         return expect(actualMaxSupply).to.be.a.bignumber.that.equal(new BN(expectedResult));
     });
 
     it("should allow tokenDeployer to mint tokens", async function() {
-        const expectedResult = tokenTotalSupply.mul(new BN(10).pow(tokenDecimals));
+        const expectedResult = new BN(1000000);
  
-        await preDeployedInstance.mint(tokenTotalSupply, recepient, { from: tokenDeployer });
+        await preDeployedInstance.mint(expectedResult, recepient, { from: tokenDeployer });
         const actualAmount = await preDeployedInstance.balanceOf(recepient);
 
         return expect(actualAmount).to.be.a.bignumber.that.equal(expectedResult);
