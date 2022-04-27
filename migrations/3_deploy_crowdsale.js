@@ -3,13 +3,14 @@ const ERC20Token = artifacts.require("./ERC20Token.sol");
 
 module.exports = async function(deployer, _, accounts) {
     const [ tokenDeployer, recepient, ...rest ] = accounts;
-    const ERC20TokenInstance = await ERC20Token.deployed(); // get ERC20 from previous migration
-    deployer.then(async () => {
+    deployer.then(async function() {
         try {
-            await deployer.deploy(Crowdsale, ERC20Token, tokenDeployer, { from: tokenDeployer });
-            await ERC20TokenInstance.approve(Crowdsale.address, process.env.APPROVED_TO_SELL, { from: tokenDeployer });
+          const ERC20TokenInstance = await ERC20Token.deployed();
+          await deployer.deploy(Crowdsale, ERC20TokenInstance.address, tokenDeployer, { from: tokenDeployer });
+          const crowdsaleInstance = await Crowdsale.deployed();
+          await ERC20TokenInstance.approve(crowdsaleInstance.address, process.env.APPROVED_TO_SELL, { from: tokenDeployer });
         } catch (error) {
-            console.log(error);
+          console.log(error);
         }
-    });
+      })
 };
