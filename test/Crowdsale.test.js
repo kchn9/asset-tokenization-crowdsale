@@ -5,20 +5,25 @@ const { expectRevert, expectEvent } = testHelpers;
 const { expect } = chai;
 
 const ERC20Token = artifacts.require("./ERC20Token.sol");
+const KYCCheck = artifacts.require("./KYCCheck.sol");
 const Crowdsale = artifacts.require("./Crowdsale.sol");
 
 contract("Crowdsale", async function(accounts) {
 
-    const [ tokenDeployer, recepient, ...rest ] = accounts;
+    const [ tokenDeployer, recepient, validator, ...rest ] = accounts;
     let tokenInstance;
+    let kycCheckInstace;
     let crowdsaleInstance;
 
+    const defaultMsgValue = web3.utils.toWei(new BN(1));
+
     async function getFreshInstance() {
-        return Crowdsale.new(tokenInstance.address, tokenDeployer, crowdsaleDefaultRate, { from: tokenDeployer });
+        return Crowdsale.new(tokenInstance.address, kycCheckInstace.address, tokenDeployer, crowdsaleDefaultRate, { from: tokenDeployer });
     }
 
     before("prepare pre-deployed instance", async function() {
         crowdsaleInstance = await Crowdsale.deployed();
+        kycCheckInstace = await KYCCheck.deployed();
         tokenInstance = await ERC20Token.deployed();
     })
 
@@ -29,45 +34,71 @@ contract("Crowdsale", async function(accounts) {
         return expect(actualAllowance).to.be.a.bignumber.that.equal(expectedAllowance);
     })
 
-    it("should sell tokens to address", async function() {
-        const msgValue = web3.utils.toWei(new BN(1));
-        const expectedBalance = msgValue.mul(crowdsaleDefaultRate).div(new BN(10).pow(new BN(tokenDecimals)))
+    describe("KYC dependant features", async function() {
+        
+        it("should reject selling tokens to unvalidated address", async function() {
+            await expectRevert(
+                crowdsaleInstance.buyTokens({ from: rest[0], value: defaultMsgValue }),
+                "Crowdsale: Caller KYC is not completed yet."
+            )
+        })
 
-        await crowdsaleInstance.buyTokens({ from: rest[0], value: msgValue }); // buy tokens for 1Eth
+        it("should reject validation if caller is not validator", async function() {
+            await expectRevert(
+                kycCheckInstace.setKYCComleted(rest[0], { from: rest[0] }),
+                "Ownable: caller is not the owner"
+            )
+        })
 
-        const actualBalance = await tokenInstance.balanceOf(rest[0]);
-        return expect(actualBalance).to.be.a.bignumber.that.equal(expectedBalance);
-    })
-
-    it("should emit TokensPurchased() event after tokens are sold", async function() {
-        const msgValue = web3.utils.toWei(new BN(1));
-        const expectedAmount = msgValue.mul(crowdsaleDefaultRate).div(new BN(10).pow(new BN(tokenDecimals)))
-
-        expectEvent(
-            await crowdsaleInstance.buyTokens({ from: rest[0], value: msgValue }),
-            "TokensPurchased",
-            {
-                amount: expectedAmount
-            }
-        )
-    })
-
-    describe("Pausable features", async function() {
-        it("should reject to sell tokens if has no allowance", async function() {
-            const instance = await getFreshInstance();
+        it("should sell tokens to validated address", async function() {
+            const expectedBalance = defaultMsgValue.mul(crowdsaleDefaultRate).div(new BN(10).pow(new BN(tokenDecimals)))
+            await kycCheckInstace.setKYCComleted(rest[0], { from: validator }); // validate rest[0]
+        
+            await crowdsaleInstance.buyTokens({ from: rest[0], value: defaultMsgValue }); // buy tokens for 1Eth
     
+            const actualBalance = await tokenInstance.balanceOf(rest[0]);
+            return expect(actualBalance).to.be.a.bignumber.that.equal(expectedBalance);
+        })
+
+        it("should emit TokensPurchased() event after tokens are sold [if validated]", async function() {
+            const expectedAmount = defaultMsgValue.mul(crowdsaleDefaultRate).div(new BN(10).pow(new BN(tokenDecimals)))
+
+            expectEvent(
+                await crowdsaleInstance.buyTokens({ from: rest[0], value: defaultMsgValue }),
+                "TokensPurchased",
+                {
+                    amount: expectedAmount
+                }
+            )
+        })
+                
+        it("should reject to sell tokens if has no allowance [if validated]", async function() {
+            const instance = await getFreshInstance();
             await expectRevert(
                 instance.buyTokens({ from: rest[0], value: 100 }),
                 "Crowdsale: Amount exceeds left allowance."
             )
         })
     
-        it("should reject to sell tokens if amount exceeds allowance", async function() {
+        it("should reject to sell tokens if amount exceeds allowance [if validated]", async function() {
             await expectRevert(
                 crowdsaleInstance.buyTokens({ from: rest[0], value: crowdsaleAllowance.add(new BN(1)) }),
                 "Crowdsale: Amount exceeds left allowance."
             )
         })
+
+        it("should mark address as unvalidated again", async function() {
+            await kycCheckInstace.setKYCRevoked(rest[0], { from: validator }); // unvalidate rest[0]
+
+            await expectRevert(
+                crowdsaleInstance.buyTokens({ from: rest[0], value: defaultMsgValue }), // rest[0] tries to buy tokens
+                "Crowdsale: Caller KYC is not completed yet."
+            )
+        })
+
+    })
+
+    describe("Pausable features", async function() {
     
         it("should reject to stop contract if caller is not crowdsale owner", async function() {
             await expectRevert(
@@ -105,9 +136,9 @@ contract("Crowdsale", async function(accounts) {
     
         it("should reject to sell tokens if crowdsale is paused", async function() {
             await crowdsaleInstance.pause({ from: tokenDeployer });
-            const msgValue = web3.utils.toWei(new BN(1));
+            await kycCheckInstace.setKYCComleted(rest[0], { from: validator}); // validate purchase
             await expectRevert(
-                crowdsaleInstance.buyTokens({ from: rest[0], value: msgValue }),
+                crowdsaleInstance.buyTokens({ from: rest[0], value: defaultMsgValue }),
                 "Pausable: Contract is paused."
             )
         })
