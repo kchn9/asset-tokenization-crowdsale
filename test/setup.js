@@ -13,6 +13,7 @@ const tokenMigrationVars = {
     tokenName: process.env.NAME,
     tokenSymbol: process.env.SYMBOL,
     tokenTotalSupply: new BN(process.env.TOTAL_SUPPLY),
+    tokenMintedAmount: new BN(process.env.MINTED_AMOUNT),
     tokenDecimals: new BN(process.env.DECIMALS)
 }
 const crowdsaleMigrationVars = {
