@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Pausable.sol";
 
-contract Crowdsale is Ownable {
+contract Crowdsale is Pausable {
 
     event TokensPurchased(address who, uint amount);
 
@@ -12,7 +12,7 @@ contract Crowdsale is Ownable {
     address payable immutable public recipient;
     uint public immutable rate; // tokens for 1 eth
 
-    constructor(ERC20 _token, address payable _recipient, uint _rate) {
+    constructor(ERC20 _token, address payable _recipient, uint _rate) Pausable() {
         require(_token.balanceOf(owner()) > 0, "Crowdsale: Deployer has no tokens to sell.");
         require(_recipient != address(0), "Crowdsale: Receipient cannot be address 0.");
         _ERC20token = _token;
@@ -20,7 +20,7 @@ contract Crowdsale is Ownable {
         rate = _rate;
     }
 
-    function buyTokens() public payable {
+    function buyTokens() public payable notPaused {
         uint tokenAmount = (msg.value * rate) / 10 ** _ERC20token.decimals();
         require(getLeftAllowance() >= tokenAmount, "Crowdsale: Amount exceeds left allowance.");
         (bool success, /* data */) = recipient.call{ value: msg.value }("");
