@@ -12,6 +12,7 @@ import "./KYCCheck.sol";
  * @notice and rate - represented as token amount customer may buy for 1ETH. (i.e: rate 10^18 means user can buy 1 token for 1ETH).
  * @notice Owner [inherited from Pausable] may change rate and recipient - every change emits suitable Event keeping audience informed.
  * @notice Owner is allowed to start / stop crowdsale - implemented by pause() / unpause() functions. He is allowed also to delete crowdsale.
+ * @author kchn9
  */
 contract Crowdsale is Pausable {
 
