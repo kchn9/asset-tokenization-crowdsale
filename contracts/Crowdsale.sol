@@ -8,14 +8,16 @@ import "./KYCCheck.sol";
 contract Crowdsale is Pausable {
 
     event TokensPurchased(address who, uint amount);
+    event RecipientChanged(uint when, address newRecipient);
+    event RateChanged(uint when, uint128 newRate);
 
     ERC20 immutable private _ERC20token;
     KYCCheck immutable private _KYCCheck;
     
-    address payable immutable public recipient;
-    uint public immutable rate; // tokens for 1 eth
+    address payable public recipient;
+    uint128 public rate; // tokens for 1 eth - uint128 to prevent overflows of balance
 
-    constructor(ERC20 _token, KYCCheck _KYCContract,  address payable _recipient, uint _rate) Pausable() {
+    constructor(ERC20 _token, KYCCheck _KYCContract,  address payable _recipient, uint128 _rate) Pausable() {
         require(_token.balanceOf(owner()) > 0, "Crowdsale: Deployer has no tokens to sell.");
         require(_recipient != address(0), "Crowdsale: Receipient cannot be address 0.");
         _ERC20token = _token;
@@ -24,7 +26,18 @@ contract Crowdsale is Pausable {
         rate = _rate;
     }
 
-    function buyTokens() public payable notPaused {
+    function changeRecipient(address payable _newRecipient) external onlyOwner {
+        require(_newRecipient != address(0), "Crowdsale: Receipient cannot be address 0.");
+        recipient = _newRecipient;
+        emit RecipientChanged(block.timestamp, _newRecipient);
+    }
+
+    function changeRate(uint128 _newRate) external onlyOwner {
+        rate = _newRate;
+        emit RateChanged(block.timestamp, _newRate);
+    }
+
+    function buyTokens() external payable notPaused {
         require(_KYCCheck.isAllowed(msg.sender), "Crowdsale: Caller KYC is not completed yet.");
 
         uint tokenAmount = (msg.value * rate) / 10 ** _ERC20token.decimals();
