@@ -51,6 +51,10 @@ contract Crowdsale is Pausable {
         emit TokensPurchased(msg.sender, tokenAmount);
     }
 
+    function deleteCrowdsale() external onlyOwner {
+        selfdestruct(recipient);
+    }
+
     function getLeftAllowance() public view returns(uint) {
         return _ERC20token.allowance(owner(), address(this));
     }
