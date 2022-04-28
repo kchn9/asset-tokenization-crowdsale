@@ -34,8 +34,71 @@ contract("Crowdsale", async function(accounts) {
         return expect(actualAllowance).to.be.a.bignumber.that.equal(expectedAllowance);
     })
 
+    it("should reject to change recipient if caller is not deployer", async function() {
+        await expectRevert(
+            crowdsaleInstance.changeRecipient(rest[0], { from: rest[0] }),
+            "Ownable: caller is not the owner"
+        )
+    })
+
+    it("should change recipient", async function() {
+        const instance = await getFreshInstance();
+        const expectedRecipient = rest[1];
+
+        await instance.changeRecipient(expectedRecipient, { from: tokenDeployer });
+
+        const actualRecipient = await instance.recipient();
+
+        return assert.strictEqual(actualRecipient, expectedRecipient);
+    })
+
+    it("should emit RecipientChanged() whenever recipient changes", async function() {
+        const instance = await getFreshInstance();
+        const expectedRecipient = rest[1];
+
+        expectEvent(
+            await instance.changeRecipient(expectedRecipient, { from: tokenDeployer }),
+            "RecipientChanged",
+            {
+                newRecipient: expectedRecipient
+            }
+        )
+    })
+
+    it("should reject to change rate if caller is not deployer", async function() {
+        const newRate = crowdsaleDefaultRate.mul(new BN(10).pow(new BN(10)));
+        await expectRevert(
+            crowdsaleInstance.changeRate(newRate, { from: rest[0] }),
+            "Ownable: caller is not the owner"
+        )
+    })
+    
+    it("should change rate", async function() {
+        const instance = await getFreshInstance();
+        const expectedRate = crowdsaleDefaultRate.mul(new BN(10).pow(new BN(10)));
+
+        await instance.changeRate(expectedRate, { from: tokenDeployer });
+
+        const actualRate = await instance.rate();
+
+        return expect(actualRate).to.be.a.bignumber.that.equal(expectedRate);
+    })
+
+    it("should emit RateChanged() whenever rate changes", async function() {
+        const instance = await getFreshInstance();
+        const expectedRate = crowdsaleDefaultRate.mul(new BN(10).pow(new BN(10)));
+
+        expectEvent(
+            await instance.changeRate(expectedRate, { from: tokenDeployer }),
+            "RateChanged",
+            {
+                newRate: expectedRate
+            }
+        )
+    })
+
     describe("KYC dependant features", async function() {
-        
+
         it("should reject selling tokens to unvalidated address", async function() {
             await expectRevert(
                 crowdsaleInstance.buyTokens({ from: rest[0], value: defaultMsgValue }),
