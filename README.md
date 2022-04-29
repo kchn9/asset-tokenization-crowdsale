@@ -74,7 +74,7 @@ Install dependencies
 
 To run tests properly .env configuration file is required.
 You may want to use default .env delivered in this repo.  
-**(here [.env.example](.env.example))**
+**(here [.env-example](.env-example))**
 
 To run tests, run the following command
 
