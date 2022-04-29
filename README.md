@@ -3,7 +3,7 @@
 
 ![](https://github.com/Developer-DAO/ukraine-donation-nft/actions/workflows/continuous-integration.yaml/badge.svg)
 
-This project is implements:
+This project implements:
 - mintable ERC-20 token *(limited by total supply)*, 
 - Know-Your-Customer pre-validation contract,
 - Pausable mechanism,
